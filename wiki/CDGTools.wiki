@@ -1,4 +1,4 @@
-#summary Here is a list of known CD+G application
+#summary Here is a list of known CD+G applications
 
 = CDG Players =
 
@@ -9,3 +9,6 @@ Add your content here.
   * MBryo (Windows)
   * KHPro
   * CDG Editor
+
+  * CD+Graphics Magic http://sourceforge.net/projects/cdgmagic/
+  * KarLyricEditor http://sourceforge.net/projects/karlyriceditor/
