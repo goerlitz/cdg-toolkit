@@ -12,3 +12,4 @@ Add your content here.
 
   * CD+Graphics Magic http://sourceforge.net/projects/cdgmagic/
   * KarLyricEditor http://sourceforge.net/projects/karlyriceditor/
+  * [http://sourceforge.net/projects/cdgeditor/ CDG Editor] manipulating cdg instructions
