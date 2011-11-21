@@ -9,7 +9,7 @@
 
   * MBryo (Windows)
   * KHPro (Windows)
-  * CDG Editor (Windows)
+  * [http://www.powerkaraoke.com/src/prod_karaokecdgcreator.php CD+G Creator] (Windows, Commercial + Trial Version)
 
   * [http://sourceforge.net/projects/cdgmagic/ CD+Graphics Magic] ( (Windows/Linux, FLTK, C++, GPL)
     Timeline based editor
