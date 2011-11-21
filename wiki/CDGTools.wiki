@@ -1,0 +1,11 @@
+#summary Here is a list of known CD+G application
+
+= CDG Players =
+
+Add your content here.
+
+= CDG Editors =
+
+  * MBryo (Windows)
+  * KHPro
+  * CDG Editor
