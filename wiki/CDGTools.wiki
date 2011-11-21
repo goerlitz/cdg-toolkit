@@ -7,9 +7,9 @@
 
 = CDG Editors =
 
-  * MBryo (Windows)
+  * [http://www.tricerasoft.com/karaoke_software/mbryo.html MBryo] (Windows, Commercial + Limited Trial Version)
   * KHPro (Windows)
-  * [http://www.powerkaraoke.com/src/prod_karaokecdgcreator.php CD+G Creator] (Windows, Commercial + Trial Version)
+  * [http://www.powerkaraoke.com/src/prod_karaokecdgcreator.php CD+G Creator] (Windows, Commercial + Limited Trial Version)
 
   * [http://sourceforge.net/projects/cdgmagic/ CD+Graphics Magic] ( (Windows/Linux, FLTK, C++, GPL)
     Timeline based editor
