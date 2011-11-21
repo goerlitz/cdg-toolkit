@@ -10,6 +10,7 @@ Add your content here.
   * KHPro
   * CDG Editor
 
-  * CD+Graphics Magic http://sourceforge.net/projects/cdgmagic/
+  * [http://sourceforge.net/projects/cdgmagic/ CD+Graphics Magic] ( (Windows/Linux, FLTK, C++, GPL)
+    Timeline based editor
   * [http://sourceforge.net/projects/karlyriceditor/ KarLyricEditor] (Windows/Linux, Qt, C++, GPLv3)
   * [http://sourceforge.net/projects/cdgeditor/ CDG Editor] manipulating cdg instructions (Windows, .NET/Mono, C#, GPL)
