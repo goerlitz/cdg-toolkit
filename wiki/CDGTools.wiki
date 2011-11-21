@@ -11,5 +11,5 @@ Add your content here.
   * CDG Editor
 
   * CD+Graphics Magic http://sourceforge.net/projects/cdgmagic/
-  * KarLyricEditor http://sourceforge.net/projects/karlyriceditor/
-  * [http://sourceforge.net/projects/cdgeditor/ CDG Editor] manipulating cdg instructions
+  * [http://sourceforge.net/projects/karlyriceditor/ KarLyricEditor] (Windows/Linux, Qt, C++, GPLv3)
+  * [http://sourceforge.net/projects/cdgeditor/ CDG Editor] manipulating cdg instructions (Windows, .NET/Mono, C#, GPL)
