@@ -16,8 +16,6 @@
   * [http://www.powerkaraoke.com/src/prod_karaokecdgcreator.php CD+G Creator] (Windows, Commercial + Limited Trial)
   * [https://karaoke.kjams.com/wiki/Producer KJams Producer] (Mac, commercial + limited trial)
 
-  * [http://sourceforge.net/projects/cdgmagic/ CD+Graphics Magic] ( (Windows/Linux, FLTK, C++, GPL)
-    Timeline based editor
+  * [http://sourceforge.net/projects/cdgmagic/ CD+Graphics Magic] ( (Windows/Linux, FLTK, C++, GPL), timeline-based editor
   * [http://sourceforge.net/projects/karlyriceditor/ KarLyricEditor] (Windows/Linux, Qt, C++, GPLv3)
-  * [http://sourceforge.net/projects/cdgeditor/ CDG Editor] (Windows, .NET/Mono, C#, GPL)
-    manipulating cdg instructions
+  * [http://sourceforge.net/projects/cdgeditor/ CDG Editor] (Windows, .NET/Mono, C#, GPL), manipulating cdg instructions
