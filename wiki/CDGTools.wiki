@@ -3,7 +3,7 @@
 = CDG Players =
 
   * [http://www.karafun.com/karaokeplayer/ KaraFun Player] (Windows, free)
-  * [http://sourceforge.net/projects/pykaraoke/ PyKaraoke] (Windows/Mac/Linux)
+  * [http://sourceforge.net/projects/pykaraoke/ PyKaraoke] (Windows/Mac/Linux, LGPL)
   * [http://sourceforge.net/projects/plarpebu/ Plarpebu]
 
 = CDG Editors =
