@@ -13,6 +13,7 @@
   * [http://www.tricerasoft.com/karaoke_software/mbryo.html MBryo] (Windows, Commercial + Limited Trial)
   * [http://www.mtu.com/basics/karaoke-home-producer.htm Karaoke Home Producer] (Windows, Commercial + Limited Trial)
   * [http://www.powerkaraoke.com/src/prod_karaokecdgcreator.php CD+G Creator] (Windows, Commercial + Limited Trial)
+  * [https://karaoke.kjams.com/wiki/Producer KJams Producer] (Mac, commercial + limited trial)
 
   * [http://sourceforge.net/projects/cdgmagic/ CD+Graphics Magic] ( (Windows/Linux, FLTK, C++, GPL)
     Timeline based editor
