@@ -4,7 +4,7 @@
 
   * [http://www.karafun.com/karaokeplayer/ KaraFun Player] (Windows, free)
   * [http://sourceforge.net/projects/pykaraoke/ PyKaraoke] (Windows/Mac/Linux, LGPL)
-  * [http://sourceforge.net/projects/plarpebu/ Plarpebu]
+  * [http://sourceforge.net/projects/plarpebu/ Plarpebu] (Windows/Mac/BSD/Linux, Java, GPL)
 
 = CDG Editors =
 
