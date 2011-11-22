@@ -5,7 +5,8 @@
   * [http://www.karafun.com/karaokeplayer/ KaraFun Player] (Windows, free)
   * [http://sourceforge.net/projects/pykaraoke/ PyKaraoke] (Windows/Mac/Linux, LGPL)
   * [http://sourceforge.net/projects/plarpebu/ Plarpebu] (Windows/Mac/BSD/Linux, Java, GPL)
-  * [http://code.google.com/p/karaokeplayerdotnet/ MP3 + CDG player written in VB.NET, GPLv3]
+  * [http://code.google.com/p/karaokeplayerdotnet/ MP3 + CDG player written in VB.NET] (GPLv3]
+  * [http://code.google.com/p/emptyorchestra/ Empty Orchestra] (Python, GPLv2)
 
 = CDG Editors =
 
