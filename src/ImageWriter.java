@@ -6,7 +6,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 
@@ -38,7 +42,7 @@ public class ImageWriter {
 		colors[index*2+1] = (byte) (((g & 0x3) << 4) | b) ;
 	}
 	
-	private void debugColors(Integer[] colors, String text) {
+	private String debugColors(Integer[] colors, String text) {
 		StringBuffer buf = new StringBuffer(text);
 		buf.append("|");
 		for (int i=0; i < 4; i++) {
@@ -51,7 +55,29 @@ public class ImageWriter {
 			buf.append(binary);
 			buf.append("|");
 		}
-		System.out.println(buf.toString());
+		return buf.toString();
+	}
+	
+	private void writeColorTable(BufferedImage img, CDGWriter cdg) throws IOException {
+    	IndexColorModel icm = (IndexColorModel) img.getColorModel();
+    	System.out.println("index palette size: " + icm.getMapSize());
+    	byte[] r = new byte[16];
+    	byte[] g = new byte[16];
+    	byte[] b = new byte[16];
+    	icm.getReds(r);
+    	icm.getGreens(g);
+    	icm.getBlues(b);
+    	byte[] colorMap = new byte[16];
+    	for (int i = 0; i < 8; i++) {
+    		encodeColor(i, (0xFF & r[i]) >> 4, (0xFF & g[i]) >> 4, (0xFF & b[i]) >> 4, colorMap);
+//    		System.out.println("color" + i + ": " + ((0xFF & r[i]) >> 4) + "/" + ((0xFF & g[i]) >> 4) + "/" + ((0xFF & b[i]) >> 4));
+    	}
+    	cdg.writeColorTable(colorMap, false);
+    	for (int i = 0; i < 8; i++) {
+    		encodeColor(i, (0xFF & r[i+8]) >> 4, (0xFF & g[i+8]) >> 4, (0xFF & b[i+8]) >> 4, colorMap);
+//    		System.out.println("color" + i + ": " + ((0xFF & r[i]) >> 4) + "/" + ((0xFF & g[i]) >> 4) + "/" + ((0xFF & b[i]) >> 4));
+    	}
+    	cdg.writeColorTable(colorMap, true);
 	}
 	
 	// get set of colors per tile
@@ -74,9 +100,10 @@ public class ImageWriter {
 	}
 	
 	private void paint4XORTile(CDGWriter cdg, BufferedImage img, int row, int column, Integer[] col) throws IOException {
-		// 0,1,2,3
-		// A A B B
-		// C D D C
+		// 0: A ^ C
+		// 1: A ^ D
+		// 2: B ^ D
+		// 3: B ^ C
 		
 		int colA = 0;
 		int colB = col[2] ^ col[1];
@@ -89,6 +116,69 @@ public class ImageWriter {
 		cdg.writeTile(colC, colD, row, column, tileMap, true);
 	}
 	
+	private void countColorBitmasks(List<Integer> colorList, Map<Integer, Integer> counts) {
+		
+		// create a color bitmask by setting the i-th bit for the i-th color
+		int bitmask = 0;
+		for (int i = 0; i < colorList.size(); i++) {
+			bitmask |= (1 << colorList.get(i));
+		}
+		
+		// increase counter for bitmask
+		Integer count = counts.get(bitmask);
+		if (count == null)
+			counts.put(bitmask, 1);
+		else
+			counts.put(bitmask, ++count);
+	}
+	
+	private void printColorBitmaskFrequency(final Map<Integer, Integer> counts) {
+    	List<Integer> keys = new ArrayList<Integer>(counts.keySet());
+    	Collections.sort(keys, new Comparator<Integer>() {
+			@Override
+			public int compare(Integer key1, Integer key2) {
+				return -counts.get(key1).compareTo(counts.get(key2));
+			}
+		});
+    	
+    	for (Integer bitmask : keys) {
+    		int count = counts.get(bitmask);
+    		String binary = Integer.toBinaryString(bitmask);
+    		StringBuffer buf = new StringBuffer();
+    		for (int i = binary.length(); i < 16; i++)
+    			buf.append(0);
+    		buf.append(binary);
+    		System.out.println(count + " - " + buf);
+    	}
+	}
+	
+	public void analyzeColorCombinations(BufferedImage img) {
+		
+		final Map<Integer, Integer> counts4 = new HashMap<Integer, Integer>();
+		final Map<Integer, Integer> counts5 = new HashMap<Integer, Integer>();
+		
+    	for (int row = 0; row < CDG_TILE_ROWS; row++) {
+    		for (int column = 0; column < CDG_TILE_COLUMNS; column++) {
+    			
+    			// get set of distinct colors in tile
+    			List<Integer> colorList = getTileColors(row, column, img);
+    			
+    			if (colorList.size() == 4) {
+    				countColorBitmasks(colorList, counts4);
+    			}
+    			if (colorList.size() == 5) {
+    				countColorBitmasks(colorList, counts5);
+    			}
+    		}
+    	}
+    	
+    	System.out.println(counts4.size() + " 4color combinations:");
+    	printColorBitmaskFrequency(counts4);
+    	
+    	System.out.println(counts5.size() + " 5color combinations:");
+    	printColorBitmaskFrequency(counts5);
+	}
+	
 	public ImageWriter() {
 		BufferedImage img = null;
 		try {
@@ -97,31 +187,15 @@ public class ImageWriter {
 		    
 		    System.out.println("image: " + img.getWidth() + "/" + img.getHeight());
 		    if (img.getColorModel() instanceof IndexColorModel) {
-		    	IndexColorModel icm = (IndexColorModel) img.getColorModel();
-		    	System.out.println("index palette size: " + icm.getMapSize());
-		    	byte[] r = new byte[16];
-		    	byte[] g = new byte[16];
-		    	byte[] b = new byte[16];
-		    	icm.getReds(r);
-		    	icm.getGreens(g);
-		    	icm.getBlues(b);
-		    	byte[] colorMap = new byte[16];
-		    	for (int i = 0; i < 8; i++) {
-		    		encodeColor(i, (0xFF & r[i]) >> 4, (0xFF & g[i]) >> 4, (0xFF & b[i]) >> 4, colorMap);
-//		    		System.out.println("color" + i + ": " + ((0xFF & r[i]) >> 4) + "/" + ((0xFF & g[i]) >> 4) + "/" + ((0xFF & b[i]) >> 4));
-		    	}
-		    	cdg.writeColorTable(colorMap, false);
-		    	for (int i = 0; i < 8; i++) {
-		    		encodeColor(i, (0xFF & r[i+8]) >> 4, (0xFF & g[i+8]) >> 4, (0xFF & b[i+8]) >> 4, colorMap);
-//		    		System.out.println("color" + i + ": " + ((0xFF & r[i]) >> 4) + "/" + ((0xFF & g[i]) >> 4) + "/" + ((0xFF & b[i]) >> 4));
-		    	}
-		    	cdg.writeColorTable(colorMap, true);
+
+		    	writeColorTable(img, cdg);
+		    	
+		    	// -----------------------------------------
+		    	
+		    	analyzeColorCombinations(img);
+		    	
 		    	
 		    	int[] colorTileFreq = new int[16];
-		    	
-//		    	int count5 = 0;
-//				int found = 0;
-				int myCount = 0;
 		    	
 				// go through all tiles and create appropriate tile_block instructions
 		    	for (int row = 0; row < CDG_TILE_ROWS; row++) {
@@ -143,7 +217,7 @@ public class ImageWriter {
 							continue;
 		    			}
 		    			
-						// xor all colors
+						// compute xor value of all colors
 						int colorCount = colorList.size();
 	    				int xor = 0;
 	    				for (int i = 0; i < colorCount; i++) {
@@ -153,34 +227,33 @@ public class ImageWriter {
 	    				if (colorCount > 3) {
 	    					// check for even and odd number of colors
 	    					if ((colorCount & 1) == 0) {
+	    						
+	    						// 4 colors in a tile
 	    						if (xor == 0 && colorCount == 4) {
 	    							paint4XORTile(cdg, img, row, column, colorList.toArray(new Integer[4]));
 	    							continue;
 	    						}
-	    						if (xor == 0)
-	    							myCount++;
 	    					} else {
-	    						int extraColor = -1;
-	    						for (int i = 0; i < colorCount; i++) {
-	    							if (colorList.get(i) == xor) {
-	    								extraColor = i;
-	    								break;
+	    						
+	    						if (colorCount == 5) {
+
+	    							// test if there is one color which equals the XOR value
+	    							// then the other colors might qualify for a XOR tile
+	    							int xorColor = -1;
+	    							for (int i = 0; i < 5; i++) {
+	    								if (colorList.get(i) == xor) {
+	    									xorColor = colorList.remove(i);
+	    									break;
+	    								}
+	    							}
+
+	    							if (xorColor >= 0) {
+	    								paint4XORTile(cdg, img, row, column, colorList.toArray(new Integer[4]));
+	    								byte[] tileMap = getTileMap(xorColor, img, row, column);
+	    								cdg.writeTile(0, colorList.get(3)^xorColor, row, column, tileMap, true);
+	    								continue;
 	    							}
 	    						}
-    							if (extraColor >= 0 && colorCount == 5) {
-    								List<Integer> cols = new ArrayList<Integer>();
-    								for (int i = 0; i < colorCount; i++) {
-    									if (i != extraColor)
-    										cols.add(colorList.get(i));
-    								}
-    								Integer[] colors = cols.toArray(new Integer[4]);
-    								paint4XORTile(cdg, img, row, column, colors);
-    								byte[] tileMap = getTileMap(extraColor, img, row, column);
-    								cdg.writeTile(0, colors[3]^colorList.get(extraColor), row, column, tileMap, true);
-    								continue;
-    							}
-    							if (extraColor >= 0)
-    								myCount++;
 	    					}
 	    				}
 
@@ -196,58 +269,8 @@ public class ImageWriter {
 		    				tileMap = getTileMap(col1, img, row, column);
 		    				cdg.writeTile(0, col0^col1, row, column, tileMap, true);
 		    			}
-
-//		    			if (colorList.size() == 5) {
-//		    				int xor = 0;
-//		    				for (int i = 0; i < 5; i++) {
-//		    					xor ^= colorList.get(i);
-//		    				}
-//		    				for (int i = 0; i < 5; i++) {
-//		    					if (xor == colorList.get(i)) {
-//		    						count5++;
-//		    						break;
-//		    					}
-//		    				}
-//		    			}
-		    			
-//		    			if (colorList.size() == 4) {
-//		    				int col1 = colorList.get(0);
-//		    				int col2 = colorList.get(1);
-//		    				int col3 = colorList.get(2);
-//		    				int col4 = colorList.get(3);
-//		    				
-//			    			// 1,2,3,4
-//			    			// A A B B
-//			    			// C D D C
-//			    			// 1=A^C, 2=A^D, 3=B^D, 4=B^C
-//			    			// A=1^C, A=2^D -> 1^C=2^D -> D=C^1^2 -> 3^B=C^1^2 -> B^C=1^2^3-> 4=1^2^3 -> notwendige Bedingung
-//
-//		    				// check if 4 colors can be displayed with just two tile updates
-//		    				if ((col1^col2^col3^col4) == 0) {
-//		    					found++;
-////			    				int colA = 0;
-////			    				int colB = col3 ^ col2;
-////			    				int colC = col1;
-////			    				int colD = col2;
-//		    				} else {
-//		    					int diff = col1^col2^col3 - col4;
-////		    					System.out.println("4color diff: " + diff);
-//		    				}
-//
-////		    				Integer[] cols = new Integer[4];
-////		    				debugColors(colorList.toArray(cols), "4 colors");
-//
-////		    				byte[] tileMap = getTileMap2(img, row, column, colorList.get(0), colorList.get(1));
-////		    				cdg.writeTile(newcol2, newcol1, row, column, tileMap, false);
-////		    				tileMap = getTileMap2(img, row, column, colorList.get(0), colorList.get(2));
-////		    				cdg.writeTile(newcol4, newcol3, row, column, tileMap, true);
-//		    			}
-		    			
 		    		}
 		    	}
-//				System.out.println("4color/2tiles: " + found);
-//				System.out.println("5color/3tiles: " + count5);
-				System.out.println(myCount + " tiles have it");
 				
 		    	int instructions = 0; // colorTileFreq[1];
 		    	for (int i=1; i < 16; i++) {
@@ -264,24 +287,6 @@ public class ImageWriter {
 		    }
 		    cdg.finish();
 		    
-//	        byte[] pixels = new byte[CDG_WIDTH*CDG_HEIGHT];
-//
-//	        // Create a data buffer using the byte buffer of pixel data.
-//	        // The pixel data is not copied; the data buffer uses the byte buffer array.
-//	        DataBuffer dbuf = new DataBufferByte(pixels, pixels.length, 0);
-//
-//	        // Prepare a sample model that specifies a storage 4-bits of
-//	        // pixel datavd in an 8-bit data element
-//	        int bitMasks[] = new int[]{(byte)0xf};
-//	        SampleModel sampleModel = new SinglePixelPackedSampleModel(DataBuffer.TYPE_BYTE, CDG_WIDTH, CDG_HEIGHT, bitMasks);
-//
-//	        // Create a raster using the sample model and data buffer
-//	        WritableRaster raster = Raster.createWritableRaster(sampleModel, dbuf, null);
-//
-//	        // Combine the color model and raster into a buffered image
-//	        IndexColorModel colorModel = new IndexColorModel(4, 16, r, g, b);
-//	        BufferedImage image = new BufferedImage(colorModel, raster, false, null);
-
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
