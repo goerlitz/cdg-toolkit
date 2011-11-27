@@ -5,7 +5,6 @@ import java.awt.image.Raster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -202,93 +201,6 @@ public class ImageWriter {
 //    	printColorBitmaskFrequency(counts5);
 	}
 	
-	class FourXORColorIterator implements Iterator<Integer[]> {
-		
-		private List<Integer> colors;
-		private int size;
-		private int c1 = 0;
-		private int c2 = 1;
-		private int c3 = 2;
-		private int c4 = 3;
-		private boolean exhausted = false;
-		private Integer[] result;
-		
-		public FourXORColorIterator(List<Integer> colorList) {
-			this.colors = colorList;
-			this.size = colorList.size();
-		}
-		
-		private boolean nextColorCombination() {
-			if (c4 < size-1) {
-				c4++;
-			} else {
-				if (c3 < c4-1) {
-					c3++;
-					c4 = c3+1;
-				} else {
-					if (c2 < c3-1) {
-						c2++;
-						c3 = c2+1;
-						c4 = c3+1;
-					} else {
-						if (c1 < c2-1) {
-							c1++;
-							c2 = c1+1;
-							c3 = c2+1;
-							c4 = c3+1;
-						} else {
-							// exhausted - no more color combinations
-							return true;
-						}
-					}
-				}
-			}
-			return false;
-		}
-		
-		@Override
-		public boolean hasNext() {
-			while (!exhausted) {
-				if ((colors.get(c1) ^ colors.get(c2) ^ colors.get(c3) ^ colors.get(c4)) == 0)
-					return true;
-				exhausted = nextColorCombination();
-			}
-			return false;
-		}
-
-		@Override
-		public Integer[] next() {
-			while (!exhausted) {
-				if ((colors.get(c1) ^ colors.get(c2) ^ colors.get(c3) ^ colors.get(c4)) == 0) {
-					result = new Integer[] {colors.get(c1), colors.get(c2), colors.get(c3), colors.get(c4)};
-					exhausted = nextColorCombination();
-					return result;
-				}
-				exhausted = nextColorCombination();
-			}
-			return null;
-		}
-
-		@Override
-		public void remove() {
-			if (result == null)
-				return;
-			
-			for (int i = 3; i >= 0; i--) {
-				colors.remove(result[i]);
-			}
-			result = null;
-			if (colors.size() < 4) {
-				exhausted = true;
-			} else {
-				c1 = 0;
-				c2 = 1;
-				c3 = 2;
-				c4 = 3;
-			}
-		}
-	}
-	
 	public ImageWriter() {}
 	
 	public void transform(BufferedImage img, int backgroundColor) {
@@ -304,8 +216,6 @@ public class ImageWriter {
 			int[] colorTileFreq = new int[17];
 			int[] colorOptCount = new int[17];
 			
-			int cc = 0;
-
 			// go through all tiles and create appropriate tile_block instructions
 			for (int row = 0; row < CDG_TILE_ROWS; row++) {
 				for (int column = 0; column < CDG_TILE_COLUMNS; column++) {
@@ -326,62 +236,42 @@ public class ImageWriter {
 						continue;
 					}
 
-					// compute xor value of all colors
-					int colorCount = colorList.size();
-					int xor = 0;
-					for (int i = 0; i < colorCount; i++) {
-						xor ^= colorList.get(i);
-					}
-					
-					// 4 distinct colors in a tile
-					if (xor == 0 && colorCount == 4) {
-						colorOptCount[4]++;
-						paint4XORTile(cdg, data, row, column, colorList.toArray(new Integer[4]));
-						continue;
-					}
-
-					// 5 distinct colors in a tile
-					if (colorCount == 5) {
+					// at least 4 distinct colors in a tile
+					if (colorList.size() >= 4) {
 						
-						Iterator<Integer[]> _4colors = new FourXORColorIterator(colorList);
+						Iterator<Integer[]> _4colors = new XORColorCombinationIterator(colorList);
 						Integer[] col4 = _4colors.next();
 						if (col4 != null) {
-							_4colors.remove();
-							int xorColor = colorList.get(0);
-							
-							colorOptCount[5]++;
-							
 							paint4XORTile(cdg, data, row, column, col4);
-							byte[] tileMap = getTileMap(xorColor, data, row, column);
-							cdg.writeTile(0, col4[3]^xorColor, row, column, tileMap, true);
+							
+							colorOptCount[colorList.size()]++;  // debug
+							
+							_4colors.remove();
+							for (int i = 0; i < colorList.size(); i++) {
+								int xorColor = colorList.get(i);
+								byte[] tileMap = getTileMap(xorColor, data, row, column);
+								cdg.writeTile(0, col4[3]^xorColor, row, column, tileMap, true);
+							}
 							continue;
 						}
 					}
 					
-					// 6 distinct colors in a tile
-					if (colorCount == 6) {
-
-						int sixor = 0;
-						
-						// find 4 out of 6 colors which have XOR=0
-						for (int i = 0; i < 5; i++) {
-							for (int j = i+1; j < 6; j++) {
-								sixor = 0;
-								for (int k = 0; k < 6; k++) {
-									if (k != i && k != j) {
-										sixor ^= colorList.get(k);
-									}
-								}
-								if (sixor == 0) {
-									colorOptCount[6]++;
-									break;
-								}
-							}
-							if (sixor == 0)
-								break;							
-						}
-						
-					}
+//					// 6 distinct colors in a tile
+//					if (colorCount == 6) {
+//						
+//						String combinations = "siXor combinations: ";
+//						Iterator<Integer[]> _4colors = new FourXORColorIterator(colorList);
+//						List<Integer[]> combList = new ArrayList<Integer[]>();
+//						while (_4colors.hasNext()) {
+//							Integer[] col4 = _4colors.next();
+//							combinations += Arrays.asList(col4) + ", ";
+//							combList.add(col4);
+//						}
+//						System.out.println(combinations);
+//						if (combList.size() > 1)
+//							cc++;
+//
+//					}
 
 					// paint one normal tile first (color 0 is used as background)
 					int col0 = colorList.get(0);
@@ -398,8 +288,6 @@ public class ImageWriter {
 				}
 			}
 			
-			System.out.println("5colcombcount: " + cc);
-
 			int instructions = 0; // colorTileFreq[1];
 			for (int i=1; i <= 16; i++) {
 				if (i == 1)
