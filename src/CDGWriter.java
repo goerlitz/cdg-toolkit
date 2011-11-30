@@ -16,7 +16,8 @@ public class CDGWriter {
 	static final byte CDG_LOAD_COLOR_TABLE_HIGH = 31;
 	static final byte CDG_TILE_BLOCK_XOR        = 38;
 
-	DataOutputStream dout;
+	private DataOutputStream dout;
+	private int instCount = 0;
 
 	public CDGWriter(String fileName) throws IOException {
 		dout = new DataOutputStream(new FileOutputStream(new File(fileName)));
@@ -34,6 +35,8 @@ public class CDGWriter {
 			packet[4+i] = colorMap[i];
 		}
 		dout.write(packet);
+		
+		instCount++;
 	}
 
 	public void writeTile(int col0, int col1, int row, int column, byte[] tileData, boolean xor) throws IOException {
@@ -54,6 +57,12 @@ public class CDGWriter {
 		}
 
 		dout.write(packet);
+		
+		instCount++;
+	}
+	
+	public int getInstructionCount() {
+		return this.instCount;
 	}
 
 	public void finish() throws IOException {

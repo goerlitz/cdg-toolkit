@@ -69,70 +69,70 @@ public class CDGReader extends TimerTask {
 	public void run() {
 		int processedPackets = 0;
 		try {
-//			synchronized(dis) {
-				while ((processedPackets < PacketsPerFrame) && ((bytesRead = dis.read(packet)) == 24)) {
-					processedPackets++;
-					packetCount ++;
+			while ((processedPackets < PacketsPerFrame) && ((bytesRead = dis.read(packet)) == 24)) {
+				processedPackets++;
+				packetCount ++;
 
-					if ((packet[0] & SC_MASK) == CDG_CMD) {   // CD+G?
-						cdgCount++;
-						frequency[packet[1] & SC_MASK]++;
+				if ((packet[0] & SC_MASK) == CDG_CMD) {   // CD+G?
+					cdgCount++;
+					frequency[packet[1] & SC_MASK]++;
 
-						switch (packet[1] & SC_MASK) {
-						case CDG_MEMORY_PRESET:
-							int color = packet[4] & 0x0F;
-							int repeat = packet[5] & 0x0F;
-							if (repeat == 0) {
-								viewer.clearScreen(color);
-							}
-							break;
-						case CDG_BORDER_PRESET:
-							int bgcol = packet[4] & 0x0F;
-							viewer.clearBorder(bgcol);
-							break;
-						case CDG_LOAD_COLOR_TABLE_LOW:
-							for (int i = 0; i<8; i++) {
-								byte[] cols = decodeColor(packet[4+i*2], packet[5+i*2]);
-								viewer.setColor(cols[0], cols[1], cols[2], i);
-								viewer.applyColor();
-							}
-							break;
-						case CDG_LOAD_COLOR_TABLE_HIGH:
-							for (int i = 0; i<8; i++) {
-								byte[] cols = decodeColor(packet[4+i*2], packet[5+i*2]);
-								viewer.setColor(cols[0], cols[1], cols[2], i+8);
-								viewer.applyColor();
-							}
-							break;
-						case CDG_TILE_BLOCK:
-							paintTile(packet, false);
-							break;
-						case CDG_TILE_BLOCK_XOR:
-							paintTile(packet, true);
-							break;
-						default:
-							break;
+					switch (packet[1] & SC_MASK) {
+					case CDG_MEMORY_PRESET:
+						int color = packet[4] & 0x0F;
+						int repeat = packet[5] & 0x0F;
+						if (repeat == 0) {
+							viewer.clearScreen(color);
 						}
-//						viewer.repaint();
-//						Thread.sleep(100);
-					} else {
-						// not cdg;
-						StringBuffer buf = new StringBuffer();
-						for (byte data : packet) {
-//							int high = data >> 4;
-//							int low = data & 0xF;
-//							buf.append((high < 10) ? high : Character.valueOf((char) (64+high)));
-//							buf.append((low < 10) ? low : Character.valueOf((char) (64+low)));
-							buf.append(data);
-							buf.append(" ");
+						break;
+					case CDG_BORDER_PRESET:
+						int bgcol = packet[4] & 0x0F;
+						viewer.clearBorder(bgcol);
+						break;
+					case CDG_LOAD_COLOR_TABLE_LOW:
+						for (int i = 0; i<8; i++) {
+							byte[] cols = decodeColor(packet[4+i*2], packet[5+i*2]);
+							viewer.setColor(cols[0], cols[1], cols[2], i);
+							viewer.applyColor();
 						}
-//						System.out.println("NO_CDG: " + buf);
+						break;
+					case CDG_LOAD_COLOR_TABLE_HIGH:
+						for (int i = 0; i<8; i++) {
+							byte[] cols = decodeColor(packet[4+i*2], packet[5+i*2]);
+							viewer.setColor(cols[0], cols[1], cols[2], i+8);
+							viewer.applyColor();
+						}
+						break;
+					case CDG_TILE_BLOCK:
+						paintTile(packet, false);
+						break;
+					case CDG_TILE_BLOCK_XOR:
+						paintTile(packet, true);
+						break;
+					default:
+						break;
 					}
+//					viewer.repaint();
+//					Thread.sleep(100);
+				} else {
+					// not cdg;
+					StringBuffer buf = new StringBuffer();
+					for (byte data : packet) {
+//						int high = data >> 4;
+//						int low = data & 0xF;
+//						buf.append((high < 10) ? high : Character.valueOf((char) (64+high)));
+//						buf.append((low < 10) ? low : Character.valueOf((char) (64+low)));
+						buf.append(data);
+						buf.append(" ");
+					}
+//					System.out.println("NO_CDG: " + buf);
 				}
-				viewer.repaint();
-				if (bytesRead == -1)
-					stop();
-//			}
+			}
+			viewer.repaint();
+			if (bytesRead == -1) {
+				stop();
+				System.out.println("CDG instructions: " + cdgCount);
+			}
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
