@@ -5,6 +5,7 @@ import java.awt.image.Raster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -112,30 +113,39 @@ public class ImageWriter {
 		return colorList;
 	}
 	
-	private void paint4XORTile(CDGWriter cdg, Raster data, int row, int column, Integer[] col) throws IOException {
-		// 0: A ^ C
-		// 1: A ^ D
-		// 2: B ^ D
-		// 3: B ^ C
+	/**
+	 * Paints four colors in a tile with just two XOR Tile Block instructions.
+	 * 
+	 * This is achieved by overlapping two XOR tiles such that the combination
+	 * of their 2x2 colors (A,B and C,D) produces the four desired colors col1,
+	 * col2, col3, col4. Formally, the XOR color combination is expressed as
+	 *  
+	 *     col1 = A^C; col2 = B^C; col3 = B^D; col4 = A^D
+	 *     
+	 * From this definition we infer the constraint col1^col2^col3^col4 = 0.
+	 * Otherwise, it is not possible to produce all four colors correctly.
+	 * 
+	 * The simplest solution for choosing colors A,B,C,D is
+	 * 
+	 *     A = col1; B = col2; C = 0; D = col2 ^ col3
+	 * 
+	 * 
+	 * @param cdg the CDG Writer.
+	 * @param data the image raster.
+	 * @param row the tile row.
+	 * @param column the tile column.
+	 * @param col the set of four colors.
+	 * @param xorCol
+	 * @throws IOException
+	 */
+	private void paint4XORTile(CDGWriter cdg, Raster data, int row, int column, Integer[] col, int xorCol) throws IOException {
 		
-		// 0 1 2 3 4 5
-		// A A A B B B
-		// C C D D D C
-		// 0 0 0 0 0 0
-		
-		// 2 layers: 2^2 =  4 possible combinations (1:AC, 2:AD, 3:BC, 4:BD) -> 1^2^3^4 = 0
-		// 3 layers: 2^3 =  8 possible combinations (ACE, ACF, ADE, ADF, BCE, BCF, BDE, BDF)
-		// 4 layers: 2^4 = 16 possible combinations
-		
-		int colA = 0;
-		int colB = col[2] ^ col[1];
-		int colC = col[0];
-		int colD = col[1];
+		assert((col[0]^col[1]^col[2]^col[3]) == 0);  // strict constraint
 		
 		byte[] tileMap = getTileMap2(data, row, column, col[0], col[1]);
-		cdg.writeTile(colB, colA, row, column, tileMap, false);
+		cdg.writeTile(col[1]^col[2], 0, row, column, tileMap, true);
 		tileMap = getTileMap2(data, row, column, col[1], col[2]);
-		cdg.writeTile(colC, colD, row, column, tileMap, true);
+		cdg.writeTile(col[0], col[1], row, column, tileMap, true);
 	}
 	
 	private void countColorBitmasks(List<Integer> colorList, Map<Integer, Integer> counts) {
@@ -216,41 +226,85 @@ public class ImageWriter {
 			int[] colorTileFreq = new int[17];
 			int[] colorOptCount = new int[17];
 			
+			int cc = 0;
+			
 			// go through all tiles and create appropriate tile_block instructions
 			for (int row = 0; row < CDG_TILE_ROWS; row++) {
 				for (int column = 0; column < CDG_TILE_COLUMNS; column++) {
 
-					// get set of distinct colors in tile
+					// get distinct colors in tile
 					List<Integer> colorList = getTileColors(row, column, data);
+					int numColors = colorList.size();
 
 					// count tiles with the same number of distinct colors
-					colorTileFreq[colorList.size()]++;
+					colorTileFreq[colorList.size()]++;  // debug
 
-					if (colorList.size() == 1) {
+					if (numColors == 1) {
 						cdg.writeTile(colorList.get(0), colorList.get(0), row, column, new byte[12], false);
 						continue;
 					}
-					if (colorList.size() == 2) {
+					if (numColors == 2) {
 						byte[] tileMap = getTileMap(colorList.get(1), data, row, column);
 						cdg.writeTile(colorList.get(0), colorList.get(1), row, column, tileMap, false);
 						continue;
 					}
 
 					// at least 4 distinct colors in a tile
-					if (colorList.size() >= 4) {
+					if (numColors >= 4 && numColors < 8) {
+//					if (numColors >= 4) {
 						
-						Iterator<Integer[]> _4colors = new XORColorCombinationIterator(colorList);
-						Integer[] col4 = _4colors.next();
-						if (col4 != null) {
-							paint4XORTile(cdg, data, row, column, col4);
+						if (numColors == 13) {
+							System.out.println("colors 13");
+						}
+						
+						Iterator<Integer[]> xorColorIterator = new XORColorCombinationIterator(colorList);
+						List<Integer[]> colorCombinations = new ArrayList<Integer[]>();
+						while (xorColorIterator.hasNext()) {
+							colorCombinations.add(xorColorIterator.next());
+							xorColorIterator.remove();
+						}
+
+						if (colorCombinations.size() != 0) {
+
+							int combinedXOR = 0;
+							for (Integer[] colors : colorCombinations) {
+								combinedXOR ^= colors[3];
+							}
+
+							if (colorCombinations.size() > 1) {
+								System.out.println(numColors + " c/t: " + colorCombinations.size() + " color combinations, rest colors " + colorList);
+								for (int i = 0; i < colorCombinations.size(); i++) {
+									System.out.println(i + ": " + debugColors(colorCombinations.get(i), ""));
+								}
+							}
 							
-							colorOptCount[colorList.size()]++;  // debug
-							
-							_4colors.remove();
-							for (int i = 0; i < colorList.size(); i++) {
-								int xorColor = colorList.get(i);
-								byte[] tileMap = getTileMap(xorColor, data, row, column);
-								cdg.writeTile(0, col4[3]^xorColor, row, column, tileMap, true);
+							// debugging
+							if (colorCombinations.size() > 1) {
+								String original = "original: ";
+								String adjusted = "adjusted: ";
+								for (Integer[] colors : colorCombinations) {
+									original += debugColors(colors, "");
+									// adjust colors
+									for (int i = 0; i < 4; i++) {
+										colors[i] = colors[i] ^ combinedXOR ^ colors[3];
+									}
+									adjusted += debugColors(colors, "");
+									paint4XORTile(cdg, data, row, column, colors, combinedXOR ^ colors[3]);
+								}
+								System.out.println(original);
+								System.out.println(adjusted);
+							} else {
+								for (Integer[] colors : colorCombinations) {
+									paint4XORTile(cdg, data, row, column, colors, combinedXOR ^ colors[3]);
+								}								
+							}
+
+							colorOptCount[numColors]++;  // debug
+
+							// paint remaining colors
+							for (int color : colorList) {
+								byte[] tileMap = getTileMap(color, data, row, column);
+								cdg.writeTile(0, combinedXOR^color, row, column, tileMap, true);
 							}
 							continue;
 						}
@@ -288,6 +342,8 @@ public class ImageWriter {
 				}
 			}
 			
+			System.out.println("4xor tiles: " + cc);
+			
 			int instructions = 0; // colorTileFreq[1];
 			for (int i=1; i <= 16; i++) {
 				if (i == 1)
@@ -303,6 +359,8 @@ public class ImageWriter {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		System.out.println(cdg.getInstructionCount() + " CDG instructions written (" + (cdg.getInstructionCount() / 300) + " seconds)");
 	}
 	
 	private byte[] getTileMap(int color, Raster data, int row, int column) {

@@ -5,7 +5,6 @@ import java.util.List;
 public class XORColorCombinationIterator  implements Iterator<Integer[]> {
 	
 	private List<Integer> colors;
-	private int size;
 	private int c1 = 0;
 	private int c2 = 1;
 	private int c3 = 2;
@@ -15,11 +14,10 @@ public class XORColorCombinationIterator  implements Iterator<Integer[]> {
 	
 	public XORColorCombinationIterator(List<Integer> colorList) {
 		this.colors = colorList;
-		this.size = colorList.size();
 	}
 	
 	private boolean nextColorCombination() {
-		if (c4 < size-1) {
+		if (c4 < colors.size()-1) {
 			c4++;
 		} else {
 			if (c3 < c4-1) {
@@ -61,7 +59,7 @@ public class XORColorCombinationIterator  implements Iterator<Integer[]> {
 		while (!exhausted) {
 			if ((colors.get(c1) ^ colors.get(c2) ^ colors.get(c3) ^ colors.get(c4)) == 0) {
 				result = new Integer[] {colors.get(c1), colors.get(c2), colors.get(c3), colors.get(c4)};
-				exhausted = nextColorCombination();
+//				exhausted = nextColorCombination();
 				return result;
 			}
 			exhausted = nextColorCombination();
@@ -71,13 +69,13 @@ public class XORColorCombinationIterator  implements Iterator<Integer[]> {
 
 	@Override
 	public void remove() {
-		if (result == null)
+		if (this.result == null)
 			return;
 		
 		for (int i = 3; i >= 0; i--) {
 			colors.remove(result[i]);
 		}
-		result = null;
+		this.result = null;
 		
 		if (colors.size() < 4) {
 			exhausted = true;
