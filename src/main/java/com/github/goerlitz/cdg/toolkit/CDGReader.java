@@ -2,15 +2,16 @@ package com.github.goerlitz.cdg.toolkit;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class CDGReader extends TimerTask {
-
-	public static final String file ="test.cdg";
 
 	static final int FramesPerSecond = 20;  // frames displayed per second, CD+G has 300 packets per second -> 300/FPS = packets per frame
 	static final int PacketsPerFrame = 300 / FramesPerSecond;
@@ -45,7 +46,7 @@ public class CDGReader extends TimerTask {
 	
 
 	
-	public CDGReader() {
+	public CDGReader(File file) {
 		try {
 			dis = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
 		} catch (FileNotFoundException e) {
@@ -175,7 +176,11 @@ public class CDGReader extends TimerTask {
 	}
 
 	public static void main(String[] args) {
-		new CDGReader().process();
+		JFileChooser chooser = new JFileChooser();
+		chooser.setFileFilter(new FileNameExtensionFilter("CDG Files", "cdg"));
+		if(JFileChooser.APPROVE_OPTION == chooser.showOpenDialog(null)) {
+			new CDGReader(chooser.getSelectedFile()).process();
+		}
 	}
 	
 	public static byte[] decodeColor(byte high, byte low) {
