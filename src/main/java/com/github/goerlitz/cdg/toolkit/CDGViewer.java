@@ -1,3 +1,5 @@
+package com.github.goerlitz.cdg.toolkit;
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;

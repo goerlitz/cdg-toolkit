@@ -1,3 +1,5 @@
+package com.github.goerlitz.cdg.toolkit;
+
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
@@ -7,9 +9,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class CDGReader extends TimerTask {
-	
+
 	public static final String file ="test.cdg";
-	
+
 	static final int FramesPerSecond = 20;  // frames displayed per second, CD+G has 300 packets per second -> 300/FPS = packets per frame
 	static final int PacketsPerFrame = 300 / FramesPerSecond;
 	static final int FrameInterval   = 1000 / FramesPerSecond;
