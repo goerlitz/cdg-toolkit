@@ -1,3 +1,5 @@
+package com.github.goerlitz.cdg.toolkit;
+
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.IndexColorModel;
