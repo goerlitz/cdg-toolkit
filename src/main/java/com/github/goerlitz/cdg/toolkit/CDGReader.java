@@ -1,3 +1,5 @@
+package com.github.goerlitz.cdg.toolkit;
+
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
